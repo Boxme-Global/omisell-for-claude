@@ -6,7 +6,7 @@ weight: 1
 Pass only if ALL hold:
 - The reply is in Vietnamese.
 - It states the 30-day period with dates.
-- It compares the channels on sales and at least two of: cancel rate, returns, marketplace fees, delivery speed.
+- It compares the channels on sales and at least two of: cancel rate, returns, marketplace fees, delivery speed. If one or both channels have no orders in the period, saying so plainly (with the period) and showing what the business does sell through instead counts as a pass for this point; it must not invent numbers for the empty channel.
 - It does not rank on sales alone when fees, cancels or returns change the picture.
 - If sales by store is refused, it says that view needs the shop owner in plain words and still compares what it can.
 - No tool names, JSON, internal ids or platform codes such as shopee_v2 appear.
