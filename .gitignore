@@ -1,2 +1,5 @@
 dist/
+plugins/omisell/evals/results/
+plugins/omisell/evals/*/results/
+__pycache__/
 .DS_Store
