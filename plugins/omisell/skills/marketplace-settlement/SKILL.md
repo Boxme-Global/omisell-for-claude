@@ -24,7 +24,7 @@ Goal: the accountant knows how much is still waiting on each marketplace, how mu
 - Summary: awaiting payout total and order count, paid-out total, mismatch count and its total difference, with the period ("orders created 01/10-31/10/2026").
 - Table 1: the three tabs - orders, expected, received.
 - Table 2: top mismatched orders - order code, channel, expected, received, difference. Say how many more mismatches exist (`abnormal.orders` minus rows shown).
-- Read the `note` and pass on its caveat in plain words: "received" only counts marketplace transactions already recorded, so a payout that lands in a later period can make an order look unpaid.
+- Read the `note` and relay its caveat in plain words: "received" only counts marketplace transactions already recorded, so a payout that lands in a later period can make an order look unpaid.
 - Next: open the mismatched orders in Omisell (Finance > Order payment reconciliation) to dispute; `/omisell:fees-by-channel` for the fee side; `/omisell:overdue-payments` for unpaid orders.
 
 ## Do not
@@ -38,7 +38,7 @@ Goal: the accountant knows how much is still waiting on each marketplace, how mu
 
 **Data source.** Every number comes from an Omisell MCP tool call in this conversation. Tools are named here by their bare name (`sales_summary`); the client may show them with a prefix. Never invent an order code, SKU, amount or cause. If no Omisell tool is available at all, say the Omisell connector is not connected and stop.
 
-**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then pass that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
+**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then use that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
 
 **Permissions.** Some calls are refused for this user. Translate, never print the raw error:
 - `missing_permission` (read tools, with `required_rules`) or `insufficient_permission` (write proposals, with `required_rule`) → "This needs the <area> permission in Omisell. Ask the shop owner to grant it." Name the area in plain words, not the rule code.

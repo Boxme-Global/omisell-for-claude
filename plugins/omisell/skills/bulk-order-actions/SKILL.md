@@ -26,7 +26,7 @@ Goal: the user acts on a set of orders in one go and sees, before anything chang
    Show the count and the window (default last 7 days) and ask the user to agree to that set before the write call. If `total` > the codes returned, say how many are left out.
 3. **Missing inputs, ask, never invent:**
    - cancel → ask the reason in the user's words.
-   - change warehouse → `list_pickup_addresses` with `is_active=true`, show the warehouse names, let the user pick; pass that warehouse's id.
+   - change warehouse → `list_pickup_addresses` with `is_active=true`, show the warehouse names, let the user pick; use that warehouse's id.
    - create shipments with a courier the user named → only an id that appears in the preview's courier choices.
 4. **Preview.** Call the write tool. It changes nothing; it returns a preview with `request_id` and `confirm_token`:
    - `items`: orders that will change,
@@ -39,7 +39,7 @@ Goal: the user acts on a set of orders in one go and sees, before anything chang
 
 - The preview the user sees: action, number of orders that will change, up to 10 codes (+N more), and ALWAYS the skipped orders grouped by reason with their codes. For cancel: the reason text and that cancelling also cancels the order's shipments and refunds. For change warehouse: the target warehouse name. For blockers: each order and its courier choices (courier + service names).
 - Ask one clear question ("Confirm these 18 orders? yes / no"). Call `confirm_action` with `request_id` and `confirm_token` only after an explicit yes to THIS preview in the user's latest message.
-  - Create shipments with blockers: pass the user's choice as `slot_fill` = `{"<order code>": {"courier_id": …, "courier_service_id": …}}`, ids taken from that order's choices.
+  - Create shipments with blockers: use the user's choice as `slot_fill` = `{"<order code>": {"courier_id": …, "courier_service_id": …}}`, ids taken from that order's choices.
 - Then `get_action_status` with `request_id`. `state` is `executing` (running in the background), `succeeded` or `failed`; `execution_result` holds per-order outcomes. Report: N succeeded, N failed with the reason per order. Still `executing` → say it is running and offer to check again; `stale: true` → say it went silent and suggest checking the orders in Omisell.
 - `confirm_action` errors: `token_expired` / `invalid_or_used_token` → call the write tool again for a fresh preview, show it again; `already_handled` → read `get_action_status` instead; `batch_too_large` → split into batches of 200; `write_disabled` → the house-rules "changing data is not enabled" text; `not_found` → the request is gone, call the write tool again; `dispatch_failed` / `audit_unavailable` → nothing ran, say so and offer to retry later.
 - The write tool returns a status instead of a preview (no `confirm_token`: the same request already exists) → report that status; do not confirm.
@@ -63,7 +63,7 @@ Goal: the user acts on a set of orders in one go and sees, before anything chang
 
 **Data source.** Every number comes from an Omisell MCP tool call in this conversation. Tools are named here by their bare name (`sales_summary`); the client may show them with a prefix. Never invent an order code, SKU, amount or cause. If no Omisell tool is available at all, say the Omisell connector is not connected and stop.
 
-**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then pass that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
+**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then use that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
 
 **Permissions.** Some calls are refused for this user. Translate, never print the raw error:
 - `missing_permission` (read tools, with `required_rules`) or `insufficient_permission` (write proposals, with `required_rule`) → "This needs the <area> permission in Omisell. Ask the shop owner to grant it." Name the area in plain words, not the rule code.

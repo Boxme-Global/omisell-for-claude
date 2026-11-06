@@ -10,13 +10,13 @@ Goal: in one answer the order team knows how many orders sit in each tab, which 
 ## Steps
 
 1. **Tab counts.** `count_orders_by_status_tab` with no arguments. With no window it returns exactly what the Orders page tabs show (last 7 days by channel order date). Each tab has `tab`, `label`, `count` and its member `statuses` (code + label).
-   - Only pass `date_from`/`date_to` (unix seconds, max 92 days) or `period` if the user asks for another period. Then the result carries a `note`: say these are NOT the numbers on the tabs.
-2. **Problem orders, one call per group.** `find_problem_orders` returns ONE combined `total` for the types you pass, plus up to `limit` newest-first `samples` (order code, raw status, channel, created time); it gives no per-type split. So call it three times, each with `days_back=7` (1-90) and `limit=5`, and read each call's `total`:
+   - Only set `date_from`/`date_to` (unix seconds, max 92 days) or `period` if the user asks for another period. Then the result carries a `note`: say these are NOT the numbers on the tabs.
+2. **Problem orders, one call per group.** `find_problem_orders` returns ONE combined `total` for the types you ask for, plus up to `limit` newest-first `samples` (order code, raw status, channel, created time); it gives no per-type split. So call it three times, each with `days_back=7` (1-90) and `limit=5`, and read each call's `total`:
    - `problem_types=["label_fail"]`: shipment creation failed,
    - `problem_types=["oos"]`: has an out-of-stock shipment,
    - `problem_types=["exception", "rts"]`: exception / exception - ready to ship.
    The user asks about one group only ("đơn lỗi tạo vận đơn") → make only that call. Never count the samples as the total.
-3. **Approved, no shipment yet.** `find_pending_shipment_orders` with `statuses=[300]` (Approved) and `limit=20`, same 7-day window. Without `statuses` it counts every order with no shipment, cancelled ones included, so always pass it. Returns `total` and order codes.
+3. **Approved, no shipment yet.** `find_pending_shipment_orders` with `statuses=[300]` (Approved) and `limit=20`, same 7-day window. Without `statuses` it counts every order with no shipment, cancelled ones included, so always set it. Returns `total` and order codes.
 4. **Deadlines.** No tool lists orders "about to be overdue" in bulk. If the user asks, say so, and offer to check named orders one by one with `/omisell:explain-order` (which reads the order card deadline). Do not estimate deadlines from created times.
 
 Five calls are the whole board (tabs, three problem groups, pending). Do not open single orders in this skill.
@@ -44,7 +44,7 @@ Five calls are the whole board (tabs, three problem groups, pending). Do not ope
 
 **Data source.** Every number comes from an Omisell MCP tool call in this conversation. Tools are named here by their bare name (`sales_summary`); the client may show them with a prefix. Never invent an order code, SKU, amount or cause. If no Omisell tool is available at all, say the Omisell connector is not connected and stop.
 
-**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then pass that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
+**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then use that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
 
 **Permissions.** Some calls are refused for this user. Translate, never print the raw error:
 - `missing_permission` (read tools, with `required_rules`) or `insufficient_permission` (write proposals, with `required_rule`) → "This needs the <area> permission in Omisell. Ask the shop owner to grant it." Name the area in plain words, not the rule code.

@@ -13,7 +13,7 @@ Goal: the accountant knows how much COD the carriers still owe, which parcels we
 2. **COD.** Call `cod_reconciliation_status` with `date_from`, `date_to`, `limit` 10 (max 20) and `date_field`:
    - `"delivered"` when the user asks about parcels delivered in the period ("COD giao tuần này"),
    - `"created"` (default) otherwise.
-   Pass `courier_ids` only when you already hold the carrier's id from another Omisell result; otherwise do not filter.
+   Set `courier_ids` only when you already hold the carrier's id from another Omisell result; otherwise do not filter.
    It returns three tabs, each with `shipments`, `cod_amount`, `received`: `to_release` (awaiting reconciliation), `released` (reconciled), `abnormal` (amount differs), plus `abnormal_samples` (tracking code, COD, received, difference = received minus COD) and a `note`.
 3. **Statements (only if asked, or the user says "bảng kê").** Call `cost_statement_summary` with `date_from`, `date_to` (statement creation date) and `statement_kind` `"purchase"` (default) or `"return"`; add `pickup_address_id` only when the user names one warehouse (`list_pickup_addresses`). It returns, per status (`label`: waiting verification, waiting approval, awaiting payment, paid), the number of statements, goods lines and amount. Per its `note`, the amount is the statements' cost of goods including VAT, and duplicate statements can exist when a schedule re-ran.
 4. **Refused.** `missing_permission` on step 2 → "This needs the COD reconciliation permission in Omisell." On step 3 → "This needs the reconciliation statement permission." Run whichever part is allowed.
@@ -24,7 +24,7 @@ Goal: the accountant knows how much COD the carriers still owe, which parcels we
 - Table 1: the three COD tabs - parcels, COD, received.
 - Table 2: top abnormal parcels - tracking code, COD, received, "received minus COD". The abnormal tab is chosen on expected vs received, so this column is not the amount the carrier owes; do not total it or call it a debt. Say how many more there are.
 - Table 3 (if step 3 ran): per status - statements, goods lines, amount. Point out the "awaiting payment" row; advise checking the Statements screen for duplicates before paying.
-- Pass on the COD `note` in plain words: only delivered or lost COD parcels count; parcels Boxme marks as reconciled carry no separate amount, so their received equals the COD.
+- Relay the COD `note` in plain words: only delivered or lost COD parcels count; parcels Boxme marks as reconciled carry no separate amount, so their received equals the COD.
 - Next: chase the carrier with the abnormal tracking codes (Finance > COD reconciliation in Omisell); `/omisell:track-shipment` for one parcel; `/omisell:marketplace-settlement` for marketplace payouts.
 
 ## Do not
@@ -38,7 +38,7 @@ Goal: the accountant knows how much COD the carriers still owe, which parcels we
 
 **Data source.** Every number comes from an Omisell MCP tool call in this conversation. Tools are named here by their bare name (`sales_summary`); the client may show them with a prefix. Never invent an order code, SKU, amount or cause. If no Omisell tool is available at all, say the Omisell connector is not connected and stop.
 
-**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then pass that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
+**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then use that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
 
 **Permissions.** Some calls are refused for this user. Translate, never print the raw error:
 - `missing_permission` (read tools, with `required_rules`) or `insufficient_permission` (write proposals, with `required_rule`) → "This needs the <area> permission in Omisell. Ask the shop owner to grant it." Name the area in plain words, not the rule code.

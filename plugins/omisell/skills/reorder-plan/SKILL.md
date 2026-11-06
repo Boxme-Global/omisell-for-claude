@@ -16,7 +16,7 @@ Goal: a reorder quantity per SKU that the user can defend, and, only on their ye
 
 ## Steps (plan: at most 6 calls)
 
-1. **SKUs.** Named → use them (max 50, one purchase order holds 50 lines). Otherwise `product_problems` with `group=1`, `limit=30` (running out at the two-week sales rate; `needs_pickup` → ask which warehouse and pass `pickup_address_id`). Refused → `top_skus` with `metric="units"`, `limit=30`, last 28 days.
+1. **SKUs.** Named → use them (max 50, one purchase order holds 50 lines). Otherwise `product_problems` with `group=1`, `limit=30` (running out at the two-week sales rate; `needs_pickup` → ask which warehouse and set `pickup_address_id`). Refused → `top_skus` with `metric="units"`, `limit=30`, last 28 days.
 2. **Sales speed.** One `sku_daily_sales` call: `skus`, `date_from` = local midnight 28 days ago, `date_to` = today's local midnight. `not_found` SKUs (combo / channel SKU) cannot be bought by that code: list them and ask for the warehouse SKU.
 3. **Stock.** `stock_on_hand` with `sku`, one call each, for the 4 SKUs with the highest daily rate (or the 4 the user named first). Skip warehouse rows with `pickup_active` false. Offer the next 4 in the next turn rather than looping: the plan can grow over several turns and go into one purchase order at the end (max 50 lines). If step 1 needed a second call (`needs_pickup` or the `top_skus` fallback), check 3 SKUs this turn instead of 4.
 
@@ -54,7 +54,7 @@ Goal: a reorder quantity per SKU that the user can defend, and, only on their ye
 
 **Data source.** Every number comes from an Omisell MCP tool call in this conversation. Tools are named here by their bare name (`sales_summary`); the client may show them with a prefix. Never invent an order code, SKU, amount or cause. If no Omisell tool is available at all, say the Omisell connector is not connected and stop.
 
-**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then pass that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
+**One business per answer.** If `list_my_businesses` is available and returns more than one business, ask which one before any other call (show company name + country), then use that `business_id` on every call. Never mix data across businesses. A result `business_required` means you forgot it: ask, do not guess.
 
 **Permissions.** Some calls are refused for this user. Translate, never print the raw error:
 - `missing_permission` (read tools, with `required_rules`) or `insufficient_permission` (write proposals, with `required_rule`) → "This needs the <area> permission in Omisell. Ask the shop owner to grant it." Name the area in plain words, not the rule code.
