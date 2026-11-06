@@ -1,0 +1,17 @@
+{
+  "name": "omisell",
+  "owner": {
+    "name": "Omisell",
+    "url": "https://omisell.com"
+  },
+  "description": "Omisell role-based workflow skills for Claude, running on the Omisell MCP connector.",
+  "plugins": [
+    {
+      "name": "omisell",
+      "source": "./plugins/omisell",
+      "description": "Daily workflows for Omisell sellers by role: owner, order ops & CS, warehouse & shipping, e-commerce, purchasing, accounting, marketing, dropship.",
+      "category": "productivity",
+      "tags": ["omisell", "e-commerce", "orders", "inventory", "marketplace"]
+    }
+  ]
+}

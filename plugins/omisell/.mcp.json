@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "omisell": {
+      "type": "http",
+      "url": "https://mcp.omisell.com/mcp"
+    }
+  }
+}
