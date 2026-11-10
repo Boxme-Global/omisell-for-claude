@@ -80,6 +80,6 @@ Rules for the cases:
 
 1. On `dev`: bump `version` in `plugins/omisell/.claude-plugin/plugin.json`; `python3 scripts/skills.py sync && python3 scripts/skills.py check`; `claude plugin validate . --strict`.
 2. On a branch from `main`, bring over ONLY the shipping files from `dev` (`git checkout dev -- .claude-plugin plugins/omisell/.claude-plugin plugins/omisell/.mcp.json plugins/omisell/skills README.md LICENSE`). Never bring `evals/`, `shared/`, `scripts/`, `CONTRIBUTING.md` or `.github/` to `main`: they would ship inside the plugin and be scanned as plugin content.
-3. Do not set `privacyPolicyUrl` in plugin.json: the runtime rejects it, and the directory reads the README's privacy link.
+3. Keep `privacyPolicyUrl` in plugin.json: the directory asks for it ("No privacy policy URL"), and Claude Code 2.1.322 loads the plugin with it. Do not add `documentationUrl` / `supportUrl`: the directory flags both as "Unrecognized field in plugin.json"; docs and support come from the README.
 4. `claude plugin validate plugins/omisell --profile directory --strict` on a fresh checkout (no `.DS_Store`), scan for internal ids, hosts and issue numbers, then merge to `main` in ONE commit (each commit on `main` is a new directory version).
 5. Tag `vX.Y.Z` and release with `omisell-plugin.zip` (zip of `.claude-plugin`, `.mcp.json`, `skills` from `plugins/omisell/`) plus the `python3 scripts/skills.py package` zips.
