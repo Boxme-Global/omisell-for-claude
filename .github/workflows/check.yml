@@ -20,3 +20,25 @@ jobs:
           python3 -m json.tool .claude-plugin/marketplace.json > /dev/null
           python3 -m json.tool plugins/omisell/.claude-plugin/plugin.json > /dev/null
           python3 -m json.tool plugins/omisell/.mcp.json > /dev/null
+
+  release-dry-run:
+    # Would this PR still ship cleanly to main? Same script a maintainer runs,
+    # with --dry-run and the PR's commit as the source: nothing is pushed.
+    if: github.event_name == 'pull_request' && github.base_ref == 'dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Claude Code (directory validator, no sign-in needed)
+        run: npm install -g @anthropic-ai/claude-code@2.1.322
+      - name: Release dry run
+        env:
+          RELEASE_SOURCE: ${{ github.sha }}
+        run: |
+          git config user.name "release-dry-run"
+          git config user.email "release-dry-run@users.noreply.github.com"
+          scripts/release.sh --dry-run "pr-${{ github.event.number }}" "release: dry run for PR #${{ github.event.number }}"
