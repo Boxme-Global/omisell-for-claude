@@ -9,8 +9,7 @@
   },
   "homepage": "https://github.com/Boxme-Global/omisell-for-claude",
   "repository": "https://github.com/Boxme-Global/omisell-for-claude",
-  "documentationUrl": "https://github.com/Boxme-Global/omisell-for-claude#readme",
-  "supportUrl": "https://github.com/Boxme-Global/omisell-for-claude/issues",
+  "privacyPolicyUrl": "https://omisell.com/privacy.html",
   "license": "MIT",
   "keywords": [
     "omisell",
