@@ -3,6 +3,7 @@
 #
 #   scripts/release.sh <slug> "<message>"            # branch, commit, push, PR → main
 #   scripts/release.sh --dry-run <slug> "<message>"  # stop before push, show the diff
+#   scripts/release.sh --draft-release <notes.md>     # AFTER that PR merged: draft GitHub release
 #
 # Why not merge dev → main: main keeps only what the plugin directory scans
 # (see CONTRIBUTING "Branches"). A merge would bring evals/, scripts/,
@@ -30,6 +31,77 @@ SHIPPING=(
 LEAK_PATTERN='10\.148\.|34\.87\.|34\.124\.|BEGIN [A-Z ]*PRIVATE|Bearer [A-Za-z0-9._-]{20,}|@boxme\.(tech|asia|vn)|business[_ ]?id[^a-z]{0,4}[0-9]{3,}|OMISELL-BACKEND|space\.boxme|\b(DS|TK|DP)-[0-9]{3,}'
 
 die() { echo "release: $*" >&2; exit 1; }
+version() { python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])'; }
+
+# Merging to main publishes a directory version, not a GitHub Release. This
+# drafts one for the version on main: tag v<version> on main's head, the zips
+# users upload to claude.ai, notes = <notes.md> under "What's new" plus the
+# Install/Skills part of the latest release. A draft is not public and creates
+# no tag until someone publishes it on GitHub.
+draft_release() {
+  local notes=$1 root sha tag tmp body prev pending
+  [[ -s "$notes" ]] || die "notes file missing or empty: $notes"
+  root=$(git rev-parse --show-toplevel)
+  cd "$root"
+  git fetch --quiet origin main dev
+  pending=$(git diff --name-only origin/main origin/dev -- "${SHIPPING[@]}")
+  [[ -z "$pending" ]] || die "main differs from dev; merge the release PR first:"$'\n'"$pending"
+  sha=$(git rev-parse origin/main)
+  tag="v$(git show origin/main:plugins/omisell/.claude-plugin/plugin.json | version)"
+  git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null && die "tag $tag already exists"
+  gh release view "$tag" >/dev/null 2>&1 && die "a release for $tag already exists (maybe a draft)"
+  prev=$(gh release view --json body -q .body | sed -n '/^## Install/,$p')
+  [[ -n "$prev" ]] || die "the latest release has no '## Install' section to reuse"
+
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/omisell-draft.XXXXXX")
+  trap "rm -rf '$tmp'" EXIT
+  body="$tmp/notes.md"
+  {
+    echo 'Omisell skills for Claude on the Omisell connector (`https://mcp.omisell.com/mcp`). Start with `/omisell:start`, or just ask `/omisell:ask`.'
+    echo
+    echo "## What's new in $tag"
+    cat "$notes"
+    echo
+    printf '%s\n' "$prev"
+  } > "$body"
+  local leaks
+  leaks=$(grep -n -E "$LEAK_PATTERN" "$body" || true)
+  [[ -z "$leaks" ]] || die "possible internal data in the notes (public repo):"$'\n'"$leaks"
+
+  # Zips are built from main's tree, never from a working copy.
+  git archive "$sha" plugins/omisell | tar -x -C "$tmp"
+  python3 - "$tmp/plugins/omisell" "$tmp/assets" <<'PY'
+import sys, zipfile
+from pathlib import Path
+
+src, out = Path(sys.argv[1]), Path(sys.argv[2])
+out.mkdir()
+
+def files(folder):
+    return sorted(p for p in folder.rglob("*") if p.is_file())
+
+# Whole plugin, for "Upload plugin" on claude.ai.
+with zipfile.ZipFile(out / "omisell-plugin.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+    for part in (src / ".claude-plugin", src / "skills"):
+        for f in files(part):
+            zf.write(f, f.relative_to(src))
+    zf.write(src / ".mcp.json", ".mcp.json")
+# One per skill; the top entry is the skill folder (claude.ai skill upload).
+for folder in sorted(p for p in (src / "skills").iterdir() if p.is_dir()):
+    with zipfile.ZipFile(out / f"omisell-{folder.name}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in files(folder):
+            zf.write(f, Path(folder.name) / f.relative_to(folder))
+PY
+  gh release create "$tag" --draft --target "$sha" --title "Omisell for Claude $tag" \
+    --notes-file "$body" "$tmp"/assets/*.zip
+  echo "release: draft $tag on ${sha:0:7} with $(ls "$tmp"/assets | wc -l) zips; review it, then Publish on GitHub."
+}
+
+if [[ "${1:-}" == "--draft-release" ]]; then
+  [[ $# -eq 2 ]] || die "usage: scripts/release.sh --draft-release <notes.md>"
+  draft_release "$2"
+  exit 0
+fi
 
 dry_run=0
 if [[ "${1:-}" == "--dry-run" ]]; then dry_run=1; shift; fi
@@ -71,7 +143,6 @@ outside=$(git diff --cached --name-only | grep -v -E "^($(IFS='|'; echo "${SHIPP
 leaks=$(git diff --cached -U0 | grep -E '^\+' | grep -n -E "$LEAK_PATTERN" || true)
 [[ -z "$leaks" ]] || die "possible internal data in the diff (public repo):"$'\n'"$leaks"
 
-version() { python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])'; }
 v_main=$(git show origin/main:plugins/omisell/.claude-plugin/plugin.json | version)
 v_new=$(version < plugins/omisell/.claude-plugin/plugin.json)
 if [[ "$v_main" == "$v_new" ]]; then
@@ -98,3 +169,4 @@ Release from \`dev\` ($v_main → $v_new): only the shipping files, one commit. 
 - scanned the diff for internal hosts, ids, emails and tokens
 EOF
 )"
+echo "release: after merging that PR (squash), run: scripts/release.sh --draft-release <notes.md>"
