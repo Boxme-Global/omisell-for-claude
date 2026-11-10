@@ -9,6 +9,9 @@
 # CONTRIBUTING.md and CI onto main, and the GitHub compare main...dev
 # conflicts on purpose whenever a dev-only file changes.
 #
+# RELEASE_SOURCE (default origin/dev) is what gets shipped; CI sets it to the
+# PR's commit to dry-run a pull request before it reaches dev.
+#
 # Works in a throwaway worktree, so your checkout and branch are untouched.
 # Needs: git, gh (signed in), claude (for the directory validator).
 set -euo pipefail
@@ -35,10 +38,12 @@ slug=$1
 message=$2
 [[ "$slug" =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "slug must be kebab-case: $slug"
 branch="release/$slug"
+source=${RELEASE_SOURCE:-origin/dev}
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
 git fetch --quiet origin main dev
+git rev-parse --verify --quiet "$source^{commit}" >/dev/null || die "unknown source: $source"
 git rev-parse --verify --quiet "refs/remotes/origin/$branch" >/dev/null \
   && die "origin/$branch already exists"
 
@@ -53,10 +58,10 @@ git worktree add --quiet -b "$branch" "$work" origin/main
 cd "$work"
 
 # --no-overlay (restore's default): a file removed on dev is removed here too.
-git restore --source=origin/dev --staged --worktree -- "${SHIPPING[@]}"
+git restore --source="$source" --staged --worktree -- "${SHIPPING[@]}"
 
 if git diff --cached --quiet; then
-  echo "release: main already matches dev for the shipping files; nothing to do."
+  echo "release: main already matches $source for the shipping files; nothing to do."
   exit 0
 fi
 
@@ -70,7 +75,7 @@ version() { python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])'
 v_main=$(git show origin/main:plugins/omisell/.claude-plugin/plugin.json | version)
 v_new=$(version < plugins/omisell/.claude-plugin/plugin.json)
 if [[ "$v_main" == "$v_new" ]]; then
-  echo "release: warning: version is still $v_new (bump it on dev for a real release)." >&2
+  echo "release: warning: version is still $v_new (bump it on dev before a real release)." >&2
 fi
 
 claude plugin validate plugins/omisell --profile directory --strict
