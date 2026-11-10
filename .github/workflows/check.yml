@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Claude Code (directory validator, no sign-in needed)
         run: npm install -g @anthropic-ai/claude-code@2.1.322
       - name: Release dry run
