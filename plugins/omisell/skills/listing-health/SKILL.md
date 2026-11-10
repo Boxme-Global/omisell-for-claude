@@ -27,7 +27,7 @@ Three different "out of stock" exist; never mix them in one number:
 ## Answer
 
 - Summary: how many listings need action and the biggest single cause, with the date checked ("as of 06/11/2026 10:00").
-- Table: one row per problem type: problem, count, top 3 SKUs, what fixes it. Order: zero stock on channel, unlinked, suspended/unlisted, running out, over link limit, not moving. Show platform `shopee_v2` as "Shopee".
+- Table: one row per problem type the user asked about: problem, count, up to 3 example SKUs, what fixes it. Order: zero stock on channel, unlinked, suspended/unlisted. Groups from step 1 the user did not ask about (running out, over link limit, not moving) get ONE line under the table with their counts, not table rows, and are never mixed into "zero stock on channel" (that is warehouse stock, not channel stock). Show platform `shopee_v2` as "Shopee". Keep the answer short: no per-store breakdown unless asked.
 - Next:
   - zero channel stock but stock in the warehouse → push stock with `/omisell:sync-stock-price`;
   - unlinked → link the listing to a warehouse SKU in Omisell (channel products screen);
