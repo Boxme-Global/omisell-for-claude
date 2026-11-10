@@ -1,7 +1,7 @@
 {
   "name": "omisell",
   "displayName": "Omisell",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Role-based workflow skills for Omisell sellers. Start with /omisell:start.",
   "author": {
     "name": "Omisell",
@@ -9,7 +9,10 @@
   },
   "homepage": "https://github.com/Boxme-Global/omisell-for-claude",
   "repository": "https://github.com/Boxme-Global/omisell-for-claude",
+  "documentationUrl": "https://developers.omisell.com/doc-2395917",
+  "supportUrl": "https://github.com/Boxme-Global/omisell-for-claude/issues",
   "privacyPolicyUrl": "https://omisell.com/privacy.html",
+  "termsOfServiceUrl": "https://omisell.com/terms-of-service.html",
   "license": "MIT",
   "keywords": [
     "omisell",
